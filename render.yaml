@@ -1,0 +1,12 @@
+# Render.com Blueprint — статический сайт
+# Залей этот файл вместе с index.html и bg_casino.jpg в GitHub-репозиторий,
+# затем импортируй репозиторий на https://render.com (кнопка "New" → "Blueprint").
+# Render сам подхватит эту конфигурацию и опубликует сайт бесплатно.
+
+services:
+  - type: web
+    name: neon-fortune
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: "."
+    pullRequestPreviewsEnabled: true
