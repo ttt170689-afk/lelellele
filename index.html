@@ -98,8 +98,8 @@ body{
    2. ФОНОВЫЕ СВЕТЯЩИЕСЯ ОРБЫ
    =========================================================================== */
 .orb{
-  position:fixed; border-radius:50%; filter:blur(70px); opacity:.45;
-  z-index:0; pointer-events:none; animation:floaty 16s ease-in-out infinite;
+  position:fixed; border-radius:50%; filter:blur(45px); opacity:.4;
+  z-index:0; pointer-events:none; animation:floaty 16s ease-in-out infinite; will-change:transform;
 }
 .orb.a{ width:280px; height:280px; background:var(--neon-pink); top:-70px;  left:-50px; }
 .orb.b{ width:320px; height:320px; background:var(--neon-cyan); bottom:-90px; right:-70px; animation-delay:-6s; }
@@ -161,7 +161,6 @@ h1{
   background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.12);
   border-radius:16px; padding:10px 6px; text-align:center;
-  backdrop-filter:blur(8px);
   box-shadow:inset 0 0 18px rgba(166,75,255,.15);
 }
 .stat .lbl{ font-size:9px; letter-spacing:2px; color:var(--txt-dim); text-transform:uppercase; }
@@ -248,8 +247,14 @@ h1{
 .machine.win .win-flash{ animation:winpulse .5s ease-in-out 3; }
 @keyframes winpulse{ 0%,100%{ opacity:0; } 50%{ opacity:1; } }
 
-/* Размытие движения во время прокрутки (вертикальное) */
-.reel .strip.spinning{ filter:url(#vblur); }
+/* Эффект скорости во время прокрутки (дёшево, без тяжёлых фильтров) */
+.reel .speed{
+  position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0;
+  background:repeating-linear-gradient(0deg, transparent 0 7px, rgba(255,255,255,.10) 7px 14px);
+  transition:opacity .15s;
+}
+.reel.spinning .speed{ opacity:1; animation:speedlines .35s linear infinite; }
+@keyframes speedlines{ from{ background-position:0 0; } to{ background-position:0 28px; } }
 
 /* Подсветка выигрышной линии */
 .payline-glow{
@@ -268,7 +273,7 @@ h1{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   z-index:8; display:flex; flex-direction:column; align-items:center; gap:8px;
   padding:18px 26px; border-radius:22px;
-  background:rgba(8,2,22,.78); backdrop-filter:blur(10px);
+  background:rgba(8,2,22,.92);
   border:2px solid rgba(255,210,74,.5);
   box-shadow:0 0 40px rgba(255,210,74,.35), inset 0 0 24px rgba(255,46,151,.18);
   transition:opacity .35s, transform .35s;
@@ -391,7 +396,7 @@ h1{
    =========================================================================== */
 .overlay{
   position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center;
-  background:rgba(0,0,0,.6); backdrop-filter:blur(5px);
+  background:rgba(0,0,0,.78);
 }
 .overlay.show{ display:flex; animation:popin .4s ease; }
 @keyframes popin{ from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:scale(1); } }
@@ -434,7 +439,7 @@ h1{
     transparent 2px,
     transparent 4px
   );
-  mix-blend-mode:overlay; opacity:.5;
+  opacity:.35;
 }
 /* Виньетка по краям */
 .vignette{
@@ -462,7 +467,7 @@ h1{
 .history{
   width:100%; max-width:620px; margin-top:14px; z-index:2;
   background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
-  border-radius:16px; padding:12px 14px; backdrop-filter:blur(6px);
+  border-radius:16px; padding:12px 14px;
 }
 .history .h-title{
   font-size:11px; letter-spacing:3px; color:var(--txt-glow); text-transform:uppercase; margin-bottom:8px;
@@ -551,7 +556,6 @@ h1{
 .bigwin{
   position:fixed; inset:0; z-index:85; display:none; align-items:center; justify-content:center;
   background:radial-gradient(circle at center, rgba(255,46,151,.25), rgba(0,0,0,.7));
-  backdrop-filter:blur(3px);
 }
 .bigwin.show{ display:flex; animation:popin .4s ease; }
 .bigwin .bw-card{ text-align:center; }
@@ -626,6 +630,57 @@ h1{
 .src b{ color:var(--neon-cyan); font-size:13px; }
 
 /* ===========================================================================
+   12.10 АДМИН-ПАНЕЛЬ (онлайн + форсирование спина)
+   =========================================================================== */
+/* Публичный бейдж «онлайн» */
+.online-badge{
+  display:inline-flex; align-items:center; gap:7px; font-size:12px; color:#7dff9b;
+  letter-spacing:1px; background:rgba(125,255,155,.08); border:1px solid rgba(125,255,155,.3);
+  padding:4px 12px; border-radius:20px; box-shadow:0 0 14px rgba(125,255,155,.25); margin-top:2px;
+}
+.online-badge .dot{ width:8px; height:8px; border-radius:50%; background:#7dff9b; box-shadow:0 0 8px #7dff9b; animation:blink 1.2s infinite; }
+
+/* Шестерёнка админа */
+.admin-gear{
+  position:fixed; right:10px; bottom:10px; z-index:70; width:44px; height:44px; border-radius:50%;
+  border:1px solid rgba(255,255,255,.2); background:rgba(10,2,24,.75); color:#ffd24a; font-size:20px; cursor:pointer;
+  box-shadow:0 0 14px rgba(255,210,74,.3); transition:box-shadow .15s, transform .15s;
+}
+.admin-gear:hover{ box-shadow:0 0 22px rgba(255,210,74,.6); transform:rotate(45deg); }
+
+/* Админ-оверлей */
+.admin .card{ width:min(94vw,560px); max-height:90vh; overflow-y:auto; }
+.admin h2{ font-size:26px; }
+.admin .gate{ text-align:center; padding:14px 4px; }
+.admin .gate input{
+  width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.05); color:#fff; font-size:16px; text-align:center; margin:12px 0; letter-spacing:2px;
+}
+.admin .locked-note{ font-size:12px; color:var(--txt-dim); }
+.admin .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+.admin .astat{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px; text-align:center; }
+.admin .astat .v{ font-size:26px; font-weight:900; color:var(--neon-cyan); text-shadow:var(--glow-cyan); }
+.admin .astat .l{ font-size:10px; color:var(--txt-dim); letter-spacing:1px; margin-top:2px; }
+.admin .players, .admin .feed{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px; margin-bottom:12px; }
+.admin .pt{ font-size:11px; letter-spacing:2px; color:var(--txt-glow); text-transform:uppercase; margin-bottom:6px; }
+.admin .plist{ display:flex; flex-direction:column; gap:5px; max-height:120px; overflow-y:auto; }
+.admin .prow{ display:flex; justify-content:space-between; font-size:12px; }
+.admin .prow .pn{ color:#fff; } .admin .prow .pb{ color:var(--gold); }
+.admin .feed{ max-height:110px; overflow-y:auto; }
+.admin .frow{ font-size:12px; color:var(--neon-green); margin:2px 0; }
+.admin .arm-title{ font-size:12px; letter-spacing:2px; color:var(--txt-glow); text-transform:uppercase; margin:8px 0; }
+.admin .arm-btns{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+.admin .arm-btns button{
+  flex:1 1 45%; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.05); color:#fff; font-weight:700; cursor:pointer; transition:.12s;
+}
+.admin .arm-btns button:hover{ background:rgba(255,255,255,.1); }
+.admin .arm-btns button.armed{ background:rgba(255,46,151,.22); border-color:var(--neon-pink); color:#ff9ad6; box-shadow:var(--glow-pink); }
+.admin .sym-select{ width:100%; padding:10px; border-radius:10px; background:rgba(255,255,255,.06); color:#fff; border:1px solid rgba(255,255,255,.15); margin-bottom:8px; }
+.admin .armed-status{ text-align:center; font-size:14px; font-weight:800; color:var(--gold); margin:8px 0; min-height:20px; }
+.admin .exit-btn{ margin-top:6px; }
+
+/* ===========================================================================
    13. ПОДВАЛ
    =========================================================================== */
 .foot{
@@ -669,13 +724,6 @@ h1{
   <!-- ===================== ИНДИКАТОР АВТО-СПИНА ===================== -->
   <div class="auto-indicator" id="autoInd">⚡ АВТО-ИГРА ВКЛЮЧЕНА</div>
 
-  <!-- ===================== SVG ФИЛЬТР РАЗМЫТИЯ ===================== -->
-  <svg width="0" height="0" style="position:absolute">
-    <filter id="vblur">
-      <feGaussianBlur stdDeviation="0 7" />
-    </filter>
-  </svg>
-
   <!-- ===================== ЧАСТИЦЫ ===================== -->
   <canvas id="fx"></canvas>
 
@@ -687,6 +735,7 @@ h1{
   <div class="wrap">
     <h1>NEON FORTUNE</h1>
     <div class="subtitle">★ бесплатное казино · только крути ★</div>
+    <div class="online-badge"><span class="dot"></span>👥 <span id="onlineCount">0</span> онлайн</div>
 
     <!-- HUD -->
     <div class="hud">
@@ -831,6 +880,45 @@ h1{
   <!-- ===================== ТОСТЫ ===================== -->
   <div class="toast-wrap" id="toastWrap"></div>
 
+  <!-- ===================== АДМИН-ПАНЕЛЬ ===================== -->
+  <div class="overlay admin" id="admin">
+    <div class="card">
+      <h2>🛡️ АДМИН-ПАНЕЛЬ</h2>
+      <!-- Шлюз пароля -->
+      <div class="gate" id="adminGate">
+        <div class="locked-note">Введите пароль администратора</div>
+        <input type="password" id="adminPass" placeholder="пароль" />
+        <button class="b-btn" id="adminLogin">ВОЙТИ</button>
+        <div class="locked-note" id="adminErr"></div>
+      </div>
+      <!-- Тело (после входа) -->
+      <div id="adminBody" style="display:none">
+        <div class="stat-grid">
+          <div class="astat"><div class="v" id="adOnline">0</div><div class="l">В СЕТИ СЕЙЧАС</div></div>
+          <div class="astat"><div class="v" id="adSpins">0</div><div class="l">СПИНОВ ВСЕГО</div></div>
+          <div class="astat"><div class="v" id="adCred">0</div><div class="l">КРЕДИТОВ В ИГРЕ</div></div>
+          <div class="astat"><div class="v" id="adJack">0</div><div class="l">ДЖЕКПОТОВ</div></div>
+        </div>
+        <div class="players"><div class="pt">🎰 Игроки онлайн</div><div class="plist" id="plist"></div></div>
+        <div class="feed"><div class="pt">💸 Лента выигрышей</div><div id="feed"></div></div>
+        <div class="arm-title">🎯 Форсировать следующий спин (игрок не видит)</div>
+        <select class="sym-select" id="symSelect"></select>
+        <div class="arm-btns">
+          <button data-arm="jackpot">💎 Джекпот 7 7 7</button>
+          <button data-arm="win">🎉 Выигрыш (не 7)</button>
+          <button data-arm="nearmiss">😏 Почти джекпот</button>
+          <button data-arm="sym">🎯 Свой символ</button>
+          <button data-arm="off" style="flex-basis:100%">❌ Честная игра</button>
+        </div>
+        <div class="armed-status" id="armedStatus">Режим: честная игра</div>
+        <button class="pay-close exit-btn" id="adminClose">ЗАКРЫТЬ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Шестерёнка админа -->
+  <button class="admin-gear" id="adminGear" title="Админ-панель">⚙</button>
+
   <!-- ===================== ОВЕРЛЕИ ===================== -->
   <div class="overlay" id="jackpot">
     <div class="card jackpot-card">
@@ -878,9 +966,10 @@ const PAYLINES = [
   { name:'Диагональ ↗', rows:[2,1,0] },
 ];
 
-const STRIP_LEN = 50;            // длина виртуальной ленты барабана
+const STRIP_LEN = 36;            // длина виртуальной ленты барабана (достаточно для плавной прокрутки)
 const NUM_REELS = 3;
 const SAVE_KEY  = 'neonFortuneSave_v1';
+const ADMIN_PASS = 'neon';       // пароль админ-панели (демо)
 
 /* ---------------------------------------------------------------------------
    СОСТОЯНИЕ ИГРЫ
@@ -907,6 +996,10 @@ let state = {
   lastWheel: 0,
   questClaimed: {},
   questNotified: {},
+  // админ / форсирование
+  forced: null,        // { mid:[sym,sym,sym] } — насильно заданная средняя линия
+  forcedKind: 'off',   // jackpot | win | nearmiss | sym | off
+  jackpots: 0,         // сколько джекпотов выпало (статистика)
 };
 
 /* Ранги игрока (по сумме кредитов) */
@@ -984,6 +1077,24 @@ const els = {
   wheelEmoji:document.getElementById('wheelEmoji'),
   wheelResult:document.getElementById('wheelResult'),
   questList: document.getElementById('questList'),
+  // админ
+  onlineCount: document.getElementById('onlineCount'),
+  adminGear:   document.getElementById('adminGear'),
+  admin:       document.getElementById('admin'),
+  adminGate:   document.getElementById('adminGate'),
+  adminPass:   document.getElementById('adminPass'),
+  adminLogin:  document.getElementById('adminLogin'),
+  adminErr:    document.getElementById('adminErr'),
+  adminBody:   document.getElementById('adminBody'),
+  adOnline:    document.getElementById('adOnline'),
+  adSpins:     document.getElementById('adSpins'),
+  adCred:      document.getElementById('adCred'),
+  adJack:      document.getElementById('adJack'),
+  plist:       document.getElementById('plist'),
+  feed:        document.getElementById('feed'),
+  symSelect:   document.getElementById('symSelect'),
+  armedStatus: document.getElementById('armedStatus'),
+  adminClose:  document.getElementById('adminClose'),
 };
 
 /* Данные барабанов */
@@ -1014,6 +1125,10 @@ function buildReels(){
       strip.appendChild(d);
     }
     reel.appendChild(strip);
+    // лёгкий оверлей «скорости» (показывается только во время прокрутки)
+    const speed = document.createElement('div');
+    speed.className = 'speed';
+    reel.appendChild(speed);
     els.reels.appendChild(reel);
     reelsData.push({ el:reel, strip, syms:[] });
   }
@@ -1073,6 +1188,11 @@ function updateHUD(){
   els.spins.textContent   = state.spins;
   if(els.hBig) els.hBig.textContent = 'Рекорд: ' + state.biggest;
   updateRank();
+  if(adminUnlocked){
+    els.adSpins.textContent = state.spins;
+    els.adCred.textContent  = state.credits;
+    els.adJack.textContent  = state.jackpots;
+  }
   // бейдж фриспинов
   if(state.freeSpins>0){
     els.fsBadge.classList.add('show');
@@ -1186,8 +1306,10 @@ function burst(big){
       g:0.12,
     });
   }
+  startParticles();
 }
 
+let particleRunning = false;
 function particleLoop(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   for(let i=parts.length-1; i>=0; i--){
@@ -1199,9 +1321,12 @@ function particleLoop(){
     ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
   }
   ctx.globalAlpha = 1;
-  requestAnimationFrame(particleLoop);
+  if(parts.length > 0){ requestAnimationFrame(particleLoop); }
+  else { particleRunning = false; }   // останавливаем цикл, когда частиц нет
 }
-particleLoop();
+function startParticles(){
+  if(!particleRunning){ particleRunning = true; requestAnimationFrame(particleLoop); }
+}
 
 /* ---------------------------------------------------------------------------
    ОВЕРЛЕИ
@@ -1526,6 +1651,129 @@ els.dailyBtn.onclick = claimDaily;
 els.wheelBtn.onclick = spinFortune;
 
 /* ---------------------------------------------------------------------------
+   АДМИН-ПАНЕЛЬ: онлайн + форсирование спина
+   --------------------------------------------------------------------------- */
+const ADMIN_NAMES = ['LuckyMax','💎 Anna','Player_8832','VegasKing','🍀 Lena','NeoGambler',
+  'X_Dragon','🎰 Boris','Mila_77','SpinLord','Казанова','🃏 Jack','Охотник','GoldRush','Миссис_Удача'];
+const FEED_WINS = ['сорвал джекпот 💎','выиграл 1 250 💰','взял фриспины 🎁','поймал ×40 ⭐',
+  'выиграл 800 🪙','бигвин 3 400 🔥','поймал ×25 7️⃣'];
+
+let onlineNow = 200 + Math.floor(Math.random()*220);
+let adminUnlocked = false;
+
+/* Живой счётчик онлайна, список игроков и лента выигрышей */
+function simulateOnline(){
+  setInterval(()=>{
+    onlineNow += Math.floor(Math.random()*17) - 8;
+    if(onlineNow < 80)  onlineNow = 80 + Math.floor(Math.random()*20);
+    if(onlineNow > 999) onlineNow = 999 - Math.floor(Math.random()*20);
+    if(els.onlineCount) els.onlineCount.textContent = onlineNow;
+    if(adminUnlocked) els.adOnline.textContent = onlineNow;
+  }, 2500);
+  setInterval(renderPlayers, 6000); renderPlayers();
+  setInterval(pushFeed, 4200);
+  for(let i=0;i<4;i++) pushFeed();
+}
+
+function renderPlayers(){
+  if(!adminUnlocked) return;
+  const n = 6 + Math.floor(Math.random()*3);
+  let html = '';
+  for(let i=0;i<n;i++){
+    const name = ADMIN_NAMES[Math.floor(Math.random()*ADMIN_NAMES.length)];
+    const bet  = (5 + Math.floor(Math.random()*99))*10;
+    html += `<div class="prow"><span class="pn">${name}</span><span class="pb">${bet} 🪙</span></div>`;
+  }
+  els.plist.innerHTML = html;
+}
+
+function pushFeed(){
+  if(!adminUnlocked) return;
+  const name = ADMIN_NAMES[Math.floor(Math.random()*ADMIN_NAMES.length)];
+  const w = FEED_WINS[Math.floor(Math.random()*FEED_WINS.length)];
+  const row = document.createElement('div');
+  row.className = 'frow';
+  row.textContent = name + ' ' + w;
+  els.feed.prepend(row);
+  while(els.feed.children.length > 12) els.feed.lastChild.remove();
+}
+
+function refreshAdminStats(){
+  if(!adminUnlocked) return;
+  els.adOnline.textContent = onlineNow;
+  els.adSpins.textContent  = state.spins;
+  els.adCred.textContent   = state.credits;
+  els.adJack.textContent   = state.jackpots;
+}
+
+/* Вход в админку */
+function openAdmin(){
+  clickSound();
+  els.admin.classList.add('show');
+  if(adminUnlocked){
+    els.adminGate.style.display='none'; els.adminBody.style.display='block';
+    refreshAdminStats(); renderPlayers();
+  } else {
+    els.adminGate.style.display='block'; els.adminBody.style.display='none'; els.adminErr.textContent='';
+  }
+}
+function buildSymSelect(){
+  els.symSelect.innerHTML = '';
+  SYMBOLS.forEach(s=>{
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.e + ' ' + s.id.toUpperCase() + ' (×'+s.mult+')';
+    els.symSelect.appendChild(o);
+  });
+}
+els.adminGear.onclick  = openAdmin;
+els.adminClose.onclick = ()=>{ clickSound(); els.admin.classList.remove('show'); };
+els.adminLogin.onclick = ()=>{
+  if(els.adminPass.value.trim() === ADMIN_PASS){
+    adminUnlocked = true;
+    els.adminGate.style.display='none'; els.adminBody.style.display='block';
+    buildSymSelect(); refreshAdminStats(); renderPlayers();
+    toast('🛡️ Админ вошёл');
+  } else {
+    els.adminErr.textContent = 'Неверный пароль';
+  }
+};
+els.adminPass.addEventListener('keydown', e=>{ if(e.key==='Enter') els.adminLogin.click(); });
+
+/* Форсирование следующего спина (игрок не видит подвоха) */
+function armOutcome(kind){
+  state.forcedKind = kind;
+  const seven = SYMBOLS.find(s=> s.id==='seven');
+  if(kind==='off'){ state.forced = null; }
+  else if(kind==='jackpot'){ state.forced = { mid:[seven,seven,seven] }; }
+  else if(kind==='win'){
+    const pool = SYMBOLS.filter(s=> s.id!=='seven');
+    const s = pool[Math.floor(Math.random()*pool.length)];
+    state.forced = { mid:[s,s,s] };
+  }
+  else if(kind==='nearmiss'){
+    const other = SYMBOLS.filter(s=> s.id!=='seven');
+    const o = other[Math.floor(Math.random()*other.length)];
+    state.forced = { mid:[seven,seven,o] };
+  }
+  else if(kind==='sym'){
+    const s = SYMBOLS.find(x=> x.id===els.symSelect.value) || SYMBOLS[0];
+    state.forced = { mid:[s,s,s] };
+  }
+  updateArmUI();
+}
+function updateArmUI(){
+  const labels = { off:'честная игра', jackpot:'💎 ДЖЕКПОТ 7 7 7', win:'🎉 выигрыш (не 7)',
+    nearmiss:'😏 почти джекпот', sym:'🎯 свой символ' };
+  els.armedStatus.textContent = 'Следующий спин: ' + (labels[state.forcedKind] || '—');
+  document.querySelectorAll('.arm-btns button').forEach(b=>{
+    b.classList.toggle('armed', b.dataset.arm === state.forcedKind);
+  });
+}
+document.querySelectorAll('.arm-btns button').forEach(b=>{
+  b.onclick = ()=>{ clickSound(); armOutcome(b.dataset.arm); };
+});
+
+/* ---------------------------------------------------------------------------
    ОСНОВНОЙ ЦИКЛ ВРАЩЕНИЯ
    --------------------------------------------------------------------------- */
 function spin(){
@@ -1561,11 +1809,12 @@ function spin(){
   // результаты: для каждого барабана — 3 видимых символа [top, mid, bottom]
   const results = [];   // results[reel] = [s1, s2, s3]
   let finished = 0;
-  const ticker = setInterval(spinSound, 70);
+  const ticker = setInterval(spinSound, 90);
 
   reelsData.forEach((rd, ri)=>{
     // выбираем финальные 3 символа
-    const s1 = pickSym(), s2 = pickSym(), s3 = pickSym();
+    const fmid = state.forced ? state.forced.mid : null;   // форсированная средняя линия (админ)
+    const s1 = pickSym(), s2 = fmid ? fmid[ri] : pickSym(), s3 = pickSym();
     results[ri] = [s1, s2, s3];
 
     // пересобираем ленту: случайные + выбранные 3 в конце
@@ -1585,8 +1834,8 @@ function spin(){
     rd.strip.style.transform = 'translateY(0px)';
     void rd.strip.offsetWidth;   // reflow
 
-    // включаем размытие движения
-    rd.strip.classList.add('spinning');
+    // включаем эффект скорости (лёгкий оверлей, без тяжёлых фильтров)
+    rd.el.classList.add('spinning');
 
     // финальная позиция: показать последние 3 символа
     const travel = (STRIP_LEN - 3) * SYM_H();
@@ -1598,7 +1847,7 @@ function spin(){
     rd.strip.style.transform  = `translateY(-${travel}px)`;
 
     setTimeout(()=>{
-      rd.strip.classList.remove('spinning'); // убираем размытие при остановке
+      rd.el.classList.remove('spinning'); // убираем эффект скорости при остановке
       finished++;
       if(finished === reelsData.length){
         clearInterval(ticker);
@@ -1606,6 +1855,9 @@ function spin(){
       }
     }, dur*1000);
   });
+
+  // форсирование одноразовое: снимаем сразу после постановки барабанов
+  if(state.forced){ state.forced = null; state.forcedKind = 'off'; updateArmUI(); }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1671,6 +1923,7 @@ function finishSpin(results){
     jackpot = true;
     totalWin += state.bet * 50;
     state.jackpotHit = true;
+    state.jackpots += 1;
   }
 
   // --- ПРИМЕНЕНИЕ РЕЗУЛЬТАТА ---
@@ -1759,6 +2012,7 @@ function saveGame(){
       cumWins:state.cumWins, fsActivated:state.fsActivated, jackpotHit:state.jackpotHit,
       lastDaily:state.lastDaily, lastWheel:state.lastWheel,
       questClaimed:state.questClaimed, questNotified:state.questNotified,
+      jackpots:state.jackpots,
     }));
   }catch(e){}
 }
@@ -1782,6 +2036,7 @@ function loadGame(){
       state.lastWheel = d.lastWheel || 0;
       state.questClaimed = d.questClaimed || {};
       state.questNotified = d.questNotified || {};
+      state.jackpots = d.jackpots ?? 0;
     }
   }catch(e){}
 }
@@ -1806,6 +2061,9 @@ function init(){
   els.spin.onclick = spin;
   // разблокировка аудио при первом касании
   document.body.addEventListener('pointerdown', ()=>{ try{ audio().resume(); }catch(e){} }, { once:true });
+  // живой счётчик онлайна (админ)
+  if(els.onlineCount) els.onlineCount.textContent = onlineNow;
+  simulateOnline();
 }
 
 /* Запуск после загрузки DOM */
@@ -1815,5 +2073,5 @@ if(document.readyState === 'loading'){
   init();
 }
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a203a634e9403052',t:'MTc4NDkwMzcwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a203c4af7f8ffcfd',t:'MTc4NDkwNDk1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
